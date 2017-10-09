@@ -8,6 +8,8 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -18,18 +20,25 @@ import java.util.Random;
  * Created by SheepYang on 2017-10-09.
  */
 
-public class CobWebView extends View {
-    private static final int DEFAULT_POINT_NUMBER = 180;//小球数量
+public class CobWebView extends View implements GestureDetector.OnGestureListener {
+    private static final int DEFAULT_POINT_NUMBER = 300;//小球数量
     private static final int ACCELERATION = 5;//小球运动的加速度
-    private static final double MAX_DISTANCE = 50;
+    private static final double MAX_DISTANCE = 150;//小点之间最长直线距离
+    private static final double TOUCH_DISTANCE = 200;//触摸半径
+    private static final double LINE_ALPHA = 150;
+    private static final double SUB_DISTANCE = 2.0;
     private int mWidth;
     private int mHeight;
     private Paint mPointPaint;
+    private Paint mTouchPaint;
     private Paint mLinePaint;
     private List<CobPoint> mPointList;
     private Config mConfig;
     private Random mRandom;
     private Context mContext;
+    private GestureDetector mGestureDetector;
+    private float mTouchX = -1;
+    private float mTouchY = -1;
 
     public CobWebView(Context context) {
         super(context);
@@ -49,6 +58,7 @@ public class CobWebView extends View {
     private void init(Context context, AttributeSet attrs) {
         mContext = context;
         mConfig = new Config();
+        mGestureDetector = new GestureDetector(context, this);
         mPointList = new ArrayList<CobPoint>();
         mRandom = new Random();
         if (attrs != null) {
@@ -56,10 +66,19 @@ public class CobWebView extends View {
             mConfig.setPointNum(typedArray.getInt(R.styleable.CobWebView_cwb_point_num, DEFAULT_POINT_NUMBER));
             typedArray.recycle();
         }
+        initPaint();
+    }
+
+    private void initPaint() {
         mLinePaint = new Paint();
         mLinePaint.setStrokeWidth(2);
         mLinePaint.setStrokeCap(Paint.Cap.ROUND);
         mLinePaint.setColor(0xFF870707);
+
+        mTouchPaint = new Paint();
+        mTouchPaint.setStrokeWidth(20);
+        mTouchPaint.setStrokeCap(Paint.Cap.ROUND);
+        mTouchPaint.setColor(0xFF000000);
 
         mPointPaint = new Paint();
         mPointPaint.setStrokeWidth(10);
@@ -99,26 +118,113 @@ public class CobWebView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (mTouchX != -1 && mTouchY != -1) {
+            canvas.drawPoint(mTouchX, mTouchY, mTouchPaint);
+        }
+
+
         for (CobPoint currentPoint :
                 mPointList) {
             currentPoint.x += currentPoint.getXa();
             currentPoint.y += currentPoint.getYa();
+
+            if (mTouchX != -1 && mTouchY != -1) {
+                float x = Math.abs(currentPoint.x - mTouchX);
+                float y = Math.abs(currentPoint.y - mTouchY);
+                double distance2 = Math.sqrt(x * x + y * y);
+                if (distance2 <= TOUCH_DISTANCE) {
+                    if ((distance2 > TOUCH_DISTANCE - 15 && distance2 <= TOUCH_DISTANCE) || (distance2 <= TOUCH_DISTANCE + 15 && distance2 > TOUCH_DISTANCE)) {
+                        if (currentPoint.x > mTouchX) {
+                            currentPoint.x += SUB_DISTANCE * Math.abs(currentPoint.getXa());
+                        } else {
+                            currentPoint.x -= SUB_DISTANCE * Math.abs(currentPoint.getXa());
+                        }
+                        if (currentPoint.y > mTouchY) {
+                            currentPoint.y += SUB_DISTANCE * Math.abs(currentPoint.getYa());
+                        } else {
+                            currentPoint.y -= SUB_DISTANCE * Math.abs(currentPoint.getYa());
+                        }
+                    }
+
+                    x = Math.abs(currentPoint.x - mTouchX);
+                    y = Math.abs(currentPoint.y - mTouchY);
+                    distance2 = Math.sqrt(x * x + y * y);
+                    int alpha = (int) ((1.0 - distance2 / TOUCH_DISTANCE) * LINE_ALPHA);
+                    mLinePaint.setAlpha(alpha);
+                    canvas.drawLine(mTouchX, mTouchY, currentPoint.x, currentPoint.y, mLinePaint);
+                }
+            }
+
+            //如果小点超出了边界则反方向反弹
             if (currentPoint.x <= 0 || currentPoint.x >= mWidth) {
                 currentPoint.setXa(-currentPoint.getXa());
             }
             if (currentPoint.y <= 0 || currentPoint.y >= mHeight) {
                 currentPoint.setYa(-currentPoint.getYa());
             }
+
             canvas.drawPoint(currentPoint.x, currentPoint.y, mPointPaint);
             for (int i = 0; i < mPointList.size(); i++) {
                 CobPoint point = mPointList.get(i);
-                int x =
-                if (currentPoint != point && Math.abs(Math.sqrt(currentPoint.x * currentPoint.x + currentPoint.y * currentPoint.y)) < MAX_DISTANCE) {
+                int x = Math.abs(currentPoint.x - point.x);
+                int y = Math.abs(currentPoint.y - point.y);
+                int distance = (int) Math.sqrt(x * x + y * y);
+                if (currentPoint != point && distance > 0 && distance < MAX_DISTANCE) {
+                    int alpha = (int) ((1.0 - distance / MAX_DISTANCE) * LINE_ALPHA);
+                    mLinePaint.setAlpha(alpha);
                     canvas.drawLine(currentPoint.x, currentPoint.y, point.x, point.y, mLinePaint);
                 }
             }
             postInvalidateDelayed(50);
         }
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        //GestureDetector没有处理up事件的方法，只能在这里处理了。
+        if (event.getAction() == MotionEvent.ACTION_UP) {
+            mTouchX = -1;
+            mTouchY = -1;
+            return true;
+        }
+        return mGestureDetector.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onDown(MotionEvent motionEvent) {
+        mTouchX = motionEvent.getX();
+        mTouchY = motionEvent.getY();
+        return true;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent motionEvent) {
+        mTouchX = motionEvent.getX();
+        mTouchY = motionEvent.getY();
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent motionEvent) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent motionEvent1, MotionEvent motionEvent2, float v, float v1) {
+        mTouchX = motionEvent2.getX();
+        mTouchY = motionEvent2.getY();
+        return true;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent motionEvent) {
+
+    }
+
+    @Override
+    public boolean onFling(MotionEvent motionEvent1, MotionEvent motionEvent2, float v, float v1) {
+        mTouchX = motionEvent2.getX();
+        mTouchY = motionEvent2.getY();
+        return true;
     }
 
     private class Config {
