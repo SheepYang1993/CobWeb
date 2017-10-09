@@ -21,10 +21,11 @@ import java.util.Random;
 public class CobWebView extends View {
     private static final int DEFAULT_POINT_NUMBER = 180;//小球数量
     private static final int ACCELERATION = 5;//小球运动的加速度
-    private static final double MAX_DISTANCE = 500;
+    private static final double MAX_DISTANCE = 50;
     private int mWidth;
     private int mHeight;
-    private Paint mPaint;
+    private Paint mPointPaint;
+    private Paint mLinePaint;
     private List<CobPoint> mPointList;
     private Config mConfig;
     private Random mRandom;
@@ -55,10 +56,15 @@ public class CobWebView extends View {
             mConfig.setPointNum(typedArray.getInt(R.styleable.CobWebView_cwb_point_num, DEFAULT_POINT_NUMBER));
             typedArray.recycle();
         }
-        mPaint = new Paint();
-        mPaint.setStrokeWidth(10);
-        mPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPaint.setColor(0xFF686868);
+        mLinePaint = new Paint();
+        mLinePaint.setStrokeWidth(2);
+        mLinePaint.setStrokeCap(Paint.Cap.ROUND);
+        mLinePaint.setColor(0xFF870707);
+
+        mPointPaint = new Paint();
+        mPointPaint.setStrokeWidth(10);
+        mPointPaint.setStrokeCap(Paint.Cap.ROUND);
+        mPointPaint.setColor(0xFF686868);
     }
 
     private void initPoint() {
@@ -103,10 +109,12 @@ public class CobWebView extends View {
             if (currentPoint.y <= 0 || currentPoint.y >= mHeight) {
                 currentPoint.setYa(-currentPoint.getYa());
             }
-            canvas.drawPoint(currentPoint.x, currentPoint.y, mPaint);
+            canvas.drawPoint(currentPoint.x, currentPoint.y, mPointPaint);
             for (int i = 0; i < mPointList.size(); i++) {
                 CobPoint point = mPointList.get(i);
+                int x =
                 if (currentPoint != point && Math.abs(Math.sqrt(currentPoint.x * currentPoint.x + currentPoint.y * currentPoint.y)) < MAX_DISTANCE) {
+                    canvas.drawLine(currentPoint.x, currentPoint.y, point.x, point.y, mLinePaint);
                 }
             }
             postInvalidateDelayed(50);
