@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CobWebView">
+        <attr name="cwb_point_num" format="integer"/>
+    </declare-styleable>
+</resources>
