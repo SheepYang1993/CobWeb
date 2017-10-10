@@ -21,12 +21,10 @@ import java.util.Random;
  */
 
 public class CobWebView extends View implements GestureDetector.OnGestureListener {
-    private static final int DEFAULT_POINT_NUMBER = 300;//小球数量
+    private static final int DEFAULT_POINT_NUMBER = 250;//小球数量
     private static final int ACCELERATION = 5;//小球运动的加速度
-    private static final double MAX_DISTANCE = 150;//小点之间最长直线距离
-    private static final double TOUCH_DISTANCE = 200;//触摸半径
+    private static final double MAX_DISTANCE =250;//小点之间最长直线距离
     private static final double LINE_ALPHA = 150;
-    private static final double SUB_DISTANCE = 2.0;
     private int mWidth;
     private int mHeight;
     private Paint mPointPaint;
@@ -125,31 +123,55 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
 
         for (CobPoint currentPoint :
                 mPointList) {
+            double tempX = Math.abs(currentPoint.x - mTouchX);
+            double tempY = Math.abs(currentPoint.y - mTouchY);
+            double tempDistance = Math.sqrt(tempX * tempX + tempY * tempY);
             currentPoint.x += currentPoint.getXa();
             currentPoint.y += currentPoint.getYa();
 
             if (mTouchX != -1 && mTouchY != -1) {
-                float x = Math.abs(currentPoint.x - mTouchX);
-                float y = Math.abs(currentPoint.y - mTouchY);
-                double distance2 = Math.sqrt(x * x + y * y);
-                if (distance2 <= TOUCH_DISTANCE) {
-                    if ((distance2 > TOUCH_DISTANCE - 15 && distance2 <= TOUCH_DISTANCE) || (distance2 <= TOUCH_DISTANCE + 15 && distance2 > TOUCH_DISTANCE)) {
+                double x = Math.abs(currentPoint.x - mTouchX);
+                double y = Math.abs(currentPoint.y - mTouchY);
+                double distance = Math.sqrt(x * x + y * y);
+                if (distance < MAX_DISTANCE) {
+//                    if ((distance2 > TOUCH_DISTANCE - 15 && distance2 <= TOUCH_DISTANCE) || (distance2 <= TOUCH_DISTANCE + 15 && distance2 > TOUCH_DISTANCE)) {
+//                        if (currentPoint.x > mTouchX) {
+//                            currentPoint.x += SUB_DISTANCE * Math.abs(currentPoint.getXa());
+//                        } else {
+//                            currentPoint.x -= SUB_DISTANCE * Math.abs(currentPoint.getXa());
+//                        }
+//                        if (currentPoint.y > mTouchY) {
+//                            currentPoint.y += SUB_DISTANCE * Math.abs(currentPoint.getYa());
+//                        } else {
+//                            currentPoint.y -= SUB_DISTANCE * Math.abs(currentPoint.getYa());
+//                        }
+//                    }
+
+//                    if (distance >= MAX_DISTANCE / 2) {
+//                        if (distance > tempDistance) {//小点远离手指触摸点
+//                        currentPoint.x += 1.3 * Math.abs(currentPoint.getXa());
+//                        } else if (distance < tempDistance) {//小点接近手指触摸点
+//                            currentPoint.x -= 1.3 * Math.abs(currentPoint.getXa());
+//                        }
+//                    }
+
+//                      dist < e.max
+//                      && (e === current_point && dist >= e.max / 2
+//                      && (r.x -= 0.03 * x_dist, r.y -= 0.03 * y_dist), //靠近的时候加速
+                    if (distance >= MAX_DISTANCE -50) {
                         if (currentPoint.x > mTouchX) {
-                            currentPoint.x += SUB_DISTANCE * Math.abs(currentPoint.getXa());
+                            currentPoint.x -= 0.03 * x;
                         } else {
-                            currentPoint.x -= SUB_DISTANCE * Math.abs(currentPoint.getXa());
+                            currentPoint.x += 0.03 * x;
                         }
                         if (currentPoint.y > mTouchY) {
-                            currentPoint.y += SUB_DISTANCE * Math.abs(currentPoint.getYa());
+                            currentPoint.y -= 0.03 * y;
                         } else {
-                            currentPoint.y -= SUB_DISTANCE * Math.abs(currentPoint.getYa());
+                            currentPoint.y += 0.03 * y;
                         }
                     }
 
-                    x = Math.abs(currentPoint.x - mTouchX);
-                    y = Math.abs(currentPoint.y - mTouchY);
-                    distance2 = Math.sqrt(x * x + y * y);
-                    int alpha = (int) ((1.0 - distance2 / TOUCH_DISTANCE) * LINE_ALPHA);
+                    int alpha = (int) ((1.0 - distance / MAX_DISTANCE) * LINE_ALPHA);
                     mLinePaint.setAlpha(alpha);
                     canvas.drawLine(mTouchX, mTouchY, currentPoint.x, currentPoint.y, mLinePaint);
                 }
@@ -183,6 +205,20 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
     public boolean onTouchEvent(MotionEvent event) {
         //GestureDetector没有处理up事件的方法，只能在这里处理了。
         if (event.getAction() == MotionEvent.ACTION_UP) {
+//            CobPoint point = new CobPoint((int) mTouchX, (int) mTouchY);
+//            int xa = 0;
+//            int ya = 0;
+//            while (xa == 0) {
+//                xa = (int) ((mRandom.nextDouble() - 0.5) * ACCELERATION);
+//            }
+//            while (ya == 0) {
+//                ya = (int) ((mRandom.nextDouble() - 0.5) * ACCELERATION);
+//            }
+//
+//            point.setXa(xa);
+//            point.setYa(ya);
+//            mPointList.add(point);
+
             mTouchX = -1;
             mTouchY = -1;
             return true;
@@ -199,8 +235,7 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
 
     @Override
     public void onShowPress(MotionEvent motionEvent) {
-        mTouchX = motionEvent.getX();
-        mTouchY = motionEvent.getY();
+
     }
 
     @Override

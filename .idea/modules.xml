@@ -3,10 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CobWeb.iml" filepath="$PROJECT_DIR$/CobWeb.iml" />
-      <module fileurl="file://$PROJECT_DIR$/CobWeb.iml" filepath="$PROJECT_DIR$/CobWeb.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/cobwebview/cobwebview.iml" filepath="$PROJECT_DIR$/cobwebview/cobwebview.iml" />
       <module fileurl="file://$PROJECT_DIR$/cobwebview/cobwebview.iml" filepath="$PROJECT_DIR$/cobwebview/cobwebview.iml" />
     </modules>
   </component>
