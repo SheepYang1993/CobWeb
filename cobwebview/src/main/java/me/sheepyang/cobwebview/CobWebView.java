@@ -181,8 +181,7 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
     public boolean onTouchEvent(MotionEvent event) {
         //GestureDetector没有处理up事件的方法，只能在这里处理了。
         if (event.getAction() == MotionEvent.ACTION_UP) {
-            mTouchX = -1;
-            mTouchY = -1;
+            clearTouchPoint();
             return true;
         }
         return mGestureDetector.onTouchEvent(event);
@@ -222,6 +221,11 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
         mTouchX = motionEvent2.getX();
         mTouchY = motionEvent2.getY();
         return true;
+    }
+
+    public void clearTouchPoint() {
+        mTouchX = -1;
+        mTouchY = -1;
     }
 
     private class Config {
