@@ -123,9 +123,6 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
 
         for (CobPoint currentPoint :
                 mPointList) {
-            double tempX = Math.abs(currentPoint.x - mTouchX);
-            double tempY = Math.abs(currentPoint.y - mTouchY);
-            double tempDistance = Math.sqrt(tempX * tempX + tempY * tempY);
             currentPoint.x += currentPoint.getXa();
             currentPoint.y += currentPoint.getYa();
 
