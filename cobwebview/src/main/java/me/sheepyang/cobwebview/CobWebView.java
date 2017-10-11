@@ -22,9 +22,15 @@ import java.util.Random;
 
 public class CobWebView extends View implements GestureDetector.OnGestureListener {
     private static final int DEFAULT_POINT_NUMBER = 250;//小球数量
-    private static final int ACCELERATION = 5;//小球运动的加速度
-    private static final double MAX_DISTANCE = 250;//小点之间最长直线距离
-    private static final double LINE_ALPHA = 150;
+    private static final int DEFAULT_ACCELERATION = 5;
+    private static final int DEFAULT_MAX_DISTANCE = 250;
+    private static final int DEFAULT_ALPHA = 150;
+    private static final int DEFAULT_LINE_WIDTH = 15;
+    private static final int DEFAULT_POINT_RADIUS = 5;
+    private static final int DEFAULT_TOUCH_POINT_RADIUS = 5;
+    private static final int DEFAULT_RANGE = 50;
+
+
     private int mWidth;
     private int mHeight;
     private Paint mPointPaint;
@@ -69,19 +75,19 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
 
     private void initPaint() {
         mLinePaint = new Paint();
-        mLinePaint.setStrokeWidth(2);
+        mLinePaint.setStrokeWidth(mConfig.getLineWidth());
         mLinePaint.setStrokeCap(Paint.Cap.ROUND);
-        mLinePaint.setColor(0xFF870707);
+        mLinePaint.setColor(0xEBFF94B9);
 
         mTouchPaint = new Paint();
-        mTouchPaint.setStrokeWidth(20);
+        mTouchPaint.setStrokeWidth(mConfig.getTouchPointRadius());
         mTouchPaint.setStrokeCap(Paint.Cap.ROUND);
-        mTouchPaint.setColor(0xFF000000);
+        mTouchPaint.setColor(0xD8FF7875);
 
         mPointPaint = new Paint();
-        mPointPaint.setStrokeWidth(10);
+        mPointPaint.setStrokeWidth(mConfig.getPointRadius());
         mPointPaint.setStrokeCap(Paint.Cap.ROUND);
-        mPointPaint.setColor(0xFF686868);
+        mPointPaint.setColor(0xEBFF4081);
     }
 
     private void initPoint() {
@@ -93,10 +99,10 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
             int ya = 0;
 
             while (xa == 0) {
-                xa = (int) ((mRandom.nextDouble() - 0.5) * ACCELERATION);
+                xa = (int) ((mRandom.nextDouble() - 0.5) * mConfig.getAcceleration());
             }
             while (ya == 0) {
-                ya = (int) ((mRandom.nextDouble() - 0.5) * ACCELERATION);
+                ya = (int) ((mRandom.nextDouble() - 0.5) * mConfig.getAcceleration());
             }
 
             point.setXa(xa);
@@ -110,7 +116,7 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
         super.onSizeChanged(w, h, oldw, oldh);
         mWidth = w;
         mHeight = h;
-        initPoint();
+        restart();
     }
 
     @Override
@@ -120,60 +126,61 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
             canvas.drawPoint(mTouchX, mTouchY, mTouchPaint);
         }
 
+        if (mPointList != null && mPointList.size() > 0) {
+            for (CobPoint currentPoint :
+                    mPointList) {
+                currentPoint.x += currentPoint.getXa();
+                currentPoint.y += currentPoint.getYa();
 
-        for (CobPoint currentPoint :
-                mPointList) {
-            currentPoint.x += currentPoint.getXa();
-            currentPoint.y += currentPoint.getYa();
-
-            if (mTouchX != -1 && mTouchY != -1) {
-                double x = Math.abs(currentPoint.x - mTouchX);
-                double y = Math.abs(currentPoint.y - mTouchY);
-                double distance = Math.sqrt(x * x + y * y);
-                if (distance < MAX_DISTANCE) {
+                if (mTouchX != -1 && mTouchY != -1) {
+                    double x = Math.abs(currentPoint.x - mTouchX);
+                    double y = Math.abs(currentPoint.y - mTouchY);
+                    double distance = Math.sqrt(x * x + y * y);
+                    if (distance < mConfig.getMaxDistance()) {
 //                      dist < e.max
 //                      && (e === current_point && dist >= e.max / 2
 //                      && (r.x -= 0.03 * x_dist, r.y -= 0.03 * y_dist), //靠近的时候加速
-                    if (distance >= MAX_DISTANCE - 50) {
-                        if (currentPoint.x > mTouchX) {
-                            currentPoint.x -= 0.03 * x;
-                        } else {
-                            currentPoint.x += 0.03 * x;
+                        if (distance >= mConfig.getMaxDistance() - mConfig.getRange()) {
+                            if (currentPoint.x > mTouchX) {
+                                currentPoint.x -= 0.03 * x;
+                            } else {
+                                currentPoint.x += 0.03 * x;
+                            }
+                            if (currentPoint.y > mTouchY) {
+                                currentPoint.y -= 0.03 * y;
+                            } else {
+                                currentPoint.y += 0.03 * y;
+                            }
                         }
-                        if (currentPoint.y > mTouchY) {
-                            currentPoint.y -= 0.03 * y;
-                        } else {
-                            currentPoint.y += 0.03 * y;
-                        }
+
+                        int alpha = (int) ((1.0 - distance / (double) mConfig.getMaxDistance()) * mConfig.getAlpha());
+                        mLinePaint.setAlpha(alpha);
+                        canvas.drawLine(mTouchX, mTouchY, currentPoint.x, currentPoint.y, mLinePaint);
                     }
+                }
 
-                    int alpha = (int) ((1.0 - distance / MAX_DISTANCE) * LINE_ALPHA);
-                    mLinePaint.setAlpha(alpha);
-                    canvas.drawLine(mTouchX, mTouchY, currentPoint.x, currentPoint.y, mLinePaint);
+                //如果小点超出了边界则反方向反弹
+                if (currentPoint.x <= 0 || currentPoint.x >= mWidth) {
+                    currentPoint.setXa(-currentPoint.getXa());
+                }
+                if (currentPoint.y <= 0 || currentPoint.y >= mHeight) {
+                    currentPoint.setYa(-currentPoint.getYa());
+                }
+
+                canvas.drawPoint(currentPoint.x, currentPoint.y, mPointPaint);
+                for (int i = 0; i < mPointList.size(); i++) {
+                    CobPoint point = mPointList.get(i);
+                    int x = Math.abs(currentPoint.x - point.x);
+                    int y = Math.abs(currentPoint.y - point.y);
+                    int distance = (int) Math.sqrt(x * x + y * y);
+                    if (currentPoint != point && distance > 0 && distance < mConfig.getMaxDistance()) {
+                        int alpha = (int) ((1.0 - distance / (double) mConfig.getMaxDistance()) * mConfig.getAlpha());
+                        mLinePaint.setAlpha(alpha);
+                        canvas.drawLine(currentPoint.x, currentPoint.y, point.x, point.y, mLinePaint);
+                    }
                 }
             }
-
-            //如果小点超出了边界则反方向反弹
-            if (currentPoint.x <= 0 || currentPoint.x >= mWidth) {
-                currentPoint.setXa(-currentPoint.getXa());
-            }
-            if (currentPoint.y <= 0 || currentPoint.y >= mHeight) {
-                currentPoint.setYa(-currentPoint.getYa());
-            }
-
-            canvas.drawPoint(currentPoint.x, currentPoint.y, mPointPaint);
-            for (int i = 0; i < mPointList.size(); i++) {
-                CobPoint point = mPointList.get(i);
-                int x = Math.abs(currentPoint.x - point.x);
-                int y = Math.abs(currentPoint.y - point.y);
-                int distance = (int) Math.sqrt(x * x + y * y);
-                if (currentPoint != point && distance > 0 && distance < MAX_DISTANCE) {
-                    int alpha = (int) ((1.0 - distance / MAX_DISTANCE) * LINE_ALPHA);
-                    mLinePaint.setAlpha(alpha);
-                    canvas.drawLine(currentPoint.x, currentPoint.y, point.x, point.y, mLinePaint);
-                }
-            }
-            postInvalidateDelayed(50);
+            postInvalidate();
         }
     }
 
@@ -228,8 +235,151 @@ public class CobWebView extends View implements GestureDetector.OnGestureListene
         mTouchY = -1;
     }
 
+    public void restart() {
+        clearPoint();
+        initPoint();
+    }
+
+    private void clearPoint() {
+        mTouchX = -1;
+        mTouchY = -1;
+        mPointList.clear();
+    }
+
+    public void setPointNum(int num) {
+        mConfig.setPointNum(num);
+        restart();
+    }
+
+    public int getPointNum() {
+        return mConfig.getPointNum();
+    }
+
+    public void setAcceleration(int acceleration) {
+        mConfig.setAcceleration(acceleration);
+        restart();
+    }
+
+    public int getAcceleration() {
+        return mConfig.getAcceleration();
+    }
+
+    public void setMaxDistance(int maxDistance) {
+        mConfig.setMaxDistance(maxDistance);
+    }
+
+    public int getMaxDistance() {
+        return mConfig.getMaxDistance();
+    }
+
+    public void setLineAlpha(int alpha) {
+        mConfig.setAlpha(alpha);
+    }
+
+    public int getLineAlpha() {
+        return mConfig.getAlpha();
+    }
+
+    public void setLineWidth(int lineWidth) {
+        mConfig.setLineWidth(lineWidth);
+        mLinePaint.setStrokeWidth(mConfig.getLineWidth());
+    }
+
+    public int getLineWidth() {
+        return mConfig.getLineWidth();
+    }
+
+    public void setPointRadius(int radius) {
+        mConfig.setPointRadius(radius);
+        mPointPaint.setStrokeWidth(mConfig.getPointRadius());
+    }
+
+    public int getPointRadius() {
+        return mConfig.getPointRadius();
+    }
+
+    public void setTouchPointRadius(int radius) {
+        mConfig.setTouchPointRadius(radius);
+        mTouchPaint.setStrokeWidth(mConfig.getTouchPointRadius());
+    }
+
+    public int getTouchPointRadius() {
+        return mConfig.getTouchPointRadius();
+    }
+
+    public void setPullBackRange(int range) {
+        mConfig.setRange(range);
+    }
+
+    public int getPullBackRange() {
+        return mConfig.getRange();
+    }
+
     private class Config {
+        private int range = DEFAULT_RANGE;
+        private int mTouchPointRadius = DEFAULT_TOUCH_POINT_RADIUS;
+        private int mPointRadius = DEFAULT_POINT_RADIUS;
+        private int mLineWidth = DEFAULT_LINE_WIDTH;
+        private int mAlpha = DEFAULT_ALPHA;
         private int mPointNum = DEFAULT_POINT_NUMBER;//小黑点个数
+        private int mAcceleration = DEFAULT_ACCELERATION;//加速度
+        private int maxDistance = DEFAULT_MAX_DISTANCE;//小点之间最长直线距离
+
+        public int getRange() {
+            return range;
+        }
+
+        public void setRange(int range) {
+            this.range = range;
+        }
+
+        public int getTouchPointRadius() {
+            return mTouchPointRadius;
+        }
+
+        public void setTouchPointRadius(int touchPointRadius) {
+            this.mTouchPointRadius = touchPointRadius;
+        }
+
+        public int getPointRadius() {
+            return mPointRadius;
+        }
+
+        public void setPointRadius(int pointRadius) {
+            this.mPointRadius = pointRadius;
+        }
+
+        public int getLineWidth() {
+            return mLineWidth;
+        }
+
+        public void setLineWidth(int lineWidth) {
+            this.mLineWidth = lineWidth;
+        }
+
+        public int getAlpha() {
+            return mAlpha;
+        }
+
+        public void setAlpha(int alpha) {
+            mAlpha = alpha;
+        }
+
+        public int getMaxDistance() {
+            return maxDistance;
+        }
+
+        public void setMaxDistance(int maxDistance) {
+            this.maxDistance = maxDistance;
+        }
+
+        public int getAcceleration() {
+            return mAcceleration;
+        }
+
+        public void setAcceleration(int acceleration) {
+            mAcceleration = acceleration;
+        }
 
         public int getPointNum() {
             return mPointNum;
