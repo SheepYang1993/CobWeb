@@ -5,3 +5,7 @@
 
 ### 效果：
 ![preview](https://s2.ax1x.com/2019/03/19/AnyGB4.gif) ![preview](https://s2.ax1x.com/2019/03/19/An6KVH.gif) ![preview](https://s2.ax1x.com/2019/03/19/An6VxK.gif)
+
+### Stargazers over time
+[![Stargazers over time](https://starchart.cc/zhoutaoo/SpringCloud.svg)](https://starchart.cc/zhoutaoo/SpringCloud)
+    
