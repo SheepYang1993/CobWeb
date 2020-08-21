@@ -7,5 +7,5 @@
 ![preview](https://s2.ax1x.com/2019/03/19/AnyGB4.gif) ![preview](https://s2.ax1x.com/2019/03/19/An6KVH.gif) ![preview](https://s2.ax1x.com/2019/03/19/An6VxK.gif)
 
 ### Stargazers over time
-[![Stargazers over time](https://starchart.cc/SheepYang1993/OnlyLive.svg)](https://starchart.cc/SheepYang1993/OnlyLive)
+[![Stargazers over time](https://starchart.cc/SheepYang1993/CobWeb.svg)](https://starchart.cc/SheepYang1993/CobWeb)
     
